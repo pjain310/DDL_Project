@@ -1,0 +1,12 @@
+jupyter
+numpy
+requests
+matplotlib
+pandas
+pgmpy
+open3d-python
+opencv-python
+imgaug
+albumentations
+keras
+tensorflow
