@@ -1,10 +1,7 @@
 """
 This file implements the dataset loading methods for UA-detrac
 If any problem occurs, please email jaeho.bang@gmail.com
-
-
 @Jaeho Bang
-
 """
 
 import argparse
@@ -51,7 +48,7 @@ class CloudImagesLoader(AbstractLoader):
 		"""
 		return None
 
-	def load_boxes(self, dir: str = None):
+	def load_boxes_for_images(self, dir: str = None):
 		"""
 		Loads boxes from annotation
 		Should be same shape as self.labels
@@ -60,8 +57,20 @@ class CloudImagesLoader(AbstractLoader):
 		if dir is None:
 			dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset',
 							   self.args.anno_path)
-		self.boxes = np.array(self.get_boxes(dir)) # load box as [(xmin, ymin), (xmax, ymax)]
-		return self.boxes
+		self.boxes = np.array(self.get_boxes_for_images(dir)) # load box as [(xmin, ymin), (xmax, ymax)]
+	return self.boxes
+
+	def load_boxes_for_videos(self, dir: str = None):
+		"""
+		Loads boxes from annotation
+		Should be same shape as self.labels
+		:return: boxes
+		"""
+		if dir is None:
+			dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset',
+							   self.args.anno_path)
+		self.boxes = np.array(self.get_boxes_for_videos(dir))
+	return self.boxes
 
 	def load_images(self, image_dir: str = None, image_size=None):
 		"""
@@ -73,12 +82,18 @@ class CloudImagesLoader(AbstractLoader):
 			self.image_width = image_size
 
 		if image_dir is None:
-			image_dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset',
+			if self.args.data_type == 'i':
+				image_dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset',
 									 self.args.image_path)
+			elif self.args.data_type == 'v':
+				image_dir = os.path.join(self.eva_dir, 'data', 'ua_detrac',
+                                     self.args.image_path)
 		file_names = []
 		for root, subdirs, files in os.walk(image_dir):
+			
 			files.sort()
-			# self.video_start_indices.append(len(file_names))
+			if self.args.data_type == 'v':
+				self.video_start_indices.append(len(file_names))
 			for file in files:
 				file_names.append(os.path.join(root, file))
 
@@ -97,7 +112,7 @@ class CloudImagesLoader(AbstractLoader):
 
 		return self.images
 
-	def load_labels(self, dir: str = None):
+	def load_labels_for_images(self, dir: str = None):
 		"""
 		Loads cloud type, fish, flower, gravel and sugar of cloud dataset
 		:return: labels
@@ -136,6 +151,30 @@ class CloudImagesLoader(AbstractLoader):
 		else:
 			return None
 
+	def load_labels_for_videos(self, dir: str = None):
+        """
+        Loads vehicle type, speed, color, and intersection of ua-detrac
+        vehicle type, speed is given by the dataset
+        color, intersection is derived from functions built-in
+        :return: labels
+        """
+
+        if dir is None:
+            dir = os.path.join(self.eva_dir, 'data', 'ua_detrac',
+                               self.args.anno_path)
+        results = self._load_XML(dir)
+        if results is not None:
+            vehicle_type_labels, speed_labels, color_labels, \
+                intersection_labels = results
+            self.labels = {'vehicle': vehicle_type_labels,
+                           'speed': speed_labels,
+                           'color': color_labels,
+                           'intersection': intersection_labels}
+
+            return self.labels
+        else:
+            return None
+
 	def get_video_start_indices(self):
 		"""
 		We don't need it for clouds dataset
@@ -147,15 +186,18 @@ class CloudImagesLoader(AbstractLoader):
 		# convert list to np.array
 		save_dir = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
 								self.args.cache_image_name)
-		# save_dir_vi = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
-		# 						   self.args.cache_vi_name)
+		if self.args.data_type == 'v':
+			save_dir_vi = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
+								   self.args.cache_vi_name)
 		if self.images is None:
 			warnings.warn("No image loaded, call load_images() first", Warning)
 		elif type(self.images) is np.ndarray:
 			np.save(save_dir, self.images)
-			# np.save(save_dir_vi, np.array(self.video_start_indices))
+			if self.args.data_type == 'v':
+				np.save(save_dir_vi, np.array(self.video_start_indices))
+				print("saved video indices to", save_dir_vi)
 			print("saved images to", save_dir)
-			# print("saved video indices to", save_dir_vi)
+		
 		else:
 			warnings.warn("Image array type is not np.....cannot save",
 						  Warning)
@@ -206,7 +248,48 @@ class CloudImagesLoader(AbstractLoader):
 		self.labels = labels_pickeled.item()
 		return self.labels
 
-	def get_boxes(self, anno_dir):
+
+	def get_boxes_for_videos(self, anno_dir):
+        width = self.image_width
+        height = self.image_height
+        import xml.etree.ElementTree as ET
+        original_height = 540
+        original_width = 960
+        anno_files = os.listdir(anno_dir)
+        anno_files.sort()
+        boxes_dataset = []
+        cumu_count = 0
+
+        for anno_file in anno_files:
+            if ".xml" not in anno_file:
+                print("skipping", anno_file)
+                continue
+            file_path = os.path.join(anno_dir, anno_file)
+
+            tree = ET.parse(file_path)
+            tree_root = tree.getroot()
+
+            for frame in tree_root.iter('frame'):
+                boxes_frame = []
+                curr_frame_num = int(frame.attrib['num'])
+                if len(boxes_dataset) < cumu_count + curr_frame_num - 1:
+                    boxes_dataset.extend([None] * (
+                        cumu_count + curr_frame_num - len(boxes_dataset)))
+                for box in frame.iter('box'):
+                    top, left, bottom, right = self.get_corners(box,
+                                                                width /
+                                                                original_width,
+                                                                height /
+                                                                original_height
+                                                                )
+                    boxes_frame.append((top, left, bottom, right))
+
+                boxes_dataset.append(boxes_frame)
+
+        return boxes_dataset
+
+
+	def get_boxes_for_images(self, anno_dir):
 		width = self.image_width
 		height = self.image_height
 		category_list = self.filters
@@ -270,83 +353,85 @@ class CloudImagesLoader(AbstractLoader):
 
 		return None
 
-	# def parse_frame_att(self, frame):
-	# 	car_per_frame = []
-	# 	speed_per_frame = []
-	# 	color_per_frame = []
-	# 	intersection_per_frame = []
+	def parse_frame_att(self, frame):
+		car_per_frame = []
+		speed_per_frame = []
+		color_per_frame = []
+		intersection_per_frame = []
 
-	# 	for att in frame.iter('attribute'):
-	# 		if att.attrib['vehicle_type']:
-	# 			car_per_frame.append(att.attrib['vehicle_type'])
-	# 		if att.attrib['speed']:
-	# 			speed_per_frame.append(self._convert_speed(
-	# 				float(att.attrib['speed'])))
-	# 		if 'color' in att.attrib.keys():
-	# 			color_per_frame.append(att.attrib['color'])
-	# 	return car_per_frame, speed_per_frame, color_per_frame, \
-	# 		intersection_per_frame
+		for att in frame.iter('attribute'):
+			if att.attrib['vehicle_type']:
+				car_per_frame.append(att.attrib['vehicle_type'])
+			if att.attrib['speed']:
+				speed_per_frame.append(self._convert_speed(
+					float(att.attrib['speed'])))
+			if 'color' in att.attrib.keys():
+				color_per_frame.append(att.attrib['color'])
+		return car_per_frame, speed_per_frame, color_per_frame, \
+			intersection_per_frame
 
-	# def populate_label(self, per_frame, labels):
-	# 	if len(per_frame) == 0:
-	# 		labels.append(None)
-	# 	else:
-	# 		labels.append(per_frame)
+	def populate_label(self, per_frame, labels):
+		if len(per_frame) == 0:
+			labels.append(None)
+		else:
+			labels.append(per_frame)
 
-	# def _load_XML(self, directory):
-	# 	"""
-	# 	UPDATE: vehicle colors can now be extracted through the xml files!!!
-	# 	We will toss the color generator
-	# 	:param directory:
-	# 	:return:
-	# 	"""
-	# 	if self.images is None:
-	# 		warnings.warn("Must load image before loading labels...returning",
-	# 					  Warning)
-	# 		return None
+	def _load_XML(self, directory):
+		"""
+		UPDATE: vehicle colors can now be extracted through the xml files!!!
+		We will toss the color generator
+		:param directory:
+		:return:
+		"""
+		if self.images is None:
+			warnings.warn("Must load image before loading labels...returning",
+						  Warning)
+			return None
 
-	# 	car_labels = []
-	# 	speed_labels = []
-	# 	color_labels = []
-	# 	intersection_labels = []
+		car_labels = []
+		speed_labels = []
+		color_labels = []
+		intersection_labels = []
 
-	# 	print("walking", directory, "for xml parsing")
-	# 	for root, subdirs, files in os.walk(directory):
-	# 		files.sort()
-	# 		for file in files:
-	# 			file_path = os.path.join(root, file)
-	# 			if ".swp" in file_path:
-	# 				continue
-	# 			tree = ET.parse(file_path)
-	# 			tree_root = tree.getroot()
-	# 			start_frame_num = 1
-	# 			start_frame = True
-	# 			for frame in tree_root.iter('frame'):
-	# 				curr_frame_num = int(frame.attrib['num'])
-	# 				if start_frame and curr_frame_num != start_frame_num:
-	# 					car_labels.append(
-	# 						[None] * (curr_frame_num - start_frame_num))
-	# 					speed_labels.append(
-	# 						[None] * (curr_frame_num - start_frame_num))
+		print("walking", directory, "for xml parsing")
+		for root, subdirs, files in os.walk(directory):
+			files.sort()
+			for file in files:
+				file_path = os.path.join(root, file)
+				if ".swp" in file_path:
+					continue
+				tree = ET.parse(file_path)
+				tree_root = tree.getroot()
+				start_frame_num = 1
+				start_frame = True
+				for frame in tree_root.iter('frame'):
+					curr_frame_num = int(frame.attrib['num'])
+					if start_frame and curr_frame_num != start_frame_num:
+						car_labels.append(
+							[None] * (curr_frame_num - start_frame_num))
+						speed_labels.append(
+							[None] * (curr_frame_num - start_frame_num))
 
-	# 				car_per_frame, speed_per_frame, color_per_frame, \
-	# 					intersection_per_frame = self.parse_frame_att(frame)
+					car_per_frame, speed_per_frame, color_per_frame, \
+						intersection_per_frame = self.parse_frame_att(frame)
 
-	# 				assert (len(car_per_frame) == len(speed_per_frame))
+					assert (len(car_per_frame) == len(speed_per_frame))
 
-	# 				self.populate_label(car_per_frame, car_labels)
-	# 				self.populate_label(speed_per_frame, speed_labels)
-	# 				self.populate_label(color_per_frame, color_labels)
-	# 				self.populate_label(intersection_per_frame,
-	# 									intersection_labels)
+					self.populate_label(car_per_frame, car_labels)
+					self.populate_label(speed_per_frame, speed_labels)
+					self.populate_label(color_per_frame, color_labels)
+					self.populate_label(intersection_per_frame,
+										intersection_labels)
 
-	# 				start_frame = False
+					start_frame = False
 
-	# 	return [car_labels, speed_labels, color_labels, intersection_labels]
+		return [car_labels, speed_labels, color_labels, intersection_labels]
 
 
 def get_parser():
 	parser = argparse.ArgumentParser(description='Define arguments for loader')
+	parser.add_argument('--data_type', default='i' ,
+						help='i and v for image and video dataset respectively')
 	parser.add_argument('--image_path', default='small-data',
 						help='Define data folder within eva/data/cloud_dataset')
 	parser.add_argument('--anno_path', default='small-annotations',
@@ -379,9 +464,18 @@ if __name__ == "__main__":
 
 	st = time.time()
 	loader = CloudImagesLoader(args)
-	images = loader.load_images()
-	labels = loader.load_labels()
-	boxes = loader.load_boxes()
+	if args.data_type=='i':
+		images = loader.load_images()
+		labels = loader.load_labels_for_images()
+		boxes = loader.load_boxes_for_images()
+
+	elif args.data_type=='v':
+		images = loader.load_video()
+		labels = loader.load_labels_for_videos()
+		boxes = loader.load_boxes_for_images()
+
+	
+	
 
 	print("Time taken to load everything from disk", time.time() - st,
 		  "seconds")
