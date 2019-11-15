@@ -16,7 +16,7 @@ pip install -r requirements.txt
 
 ## Modified Files
 
-1. preprocessing.ipynb : contains code for the object which would store image-wise information about the mask, labels, in addition to utilities for resizing the image and loading it.
+1. cloud-classification.ipynb : contains code for the object which would store image-wise information about the mask, labels, in addition to utilities for resizing the image and loading it.
 This file also contains code to train the model and make predictions for the test dataset. The code takes approx ~9 hrs to run. For convenience, we have added the h5 file for the model to the repository.
 
 2. /Eva/src/loaders/loader_uadtra_cloud.py: contains our modified code to add our cloud dataset into EVA.
