@@ -9,6 +9,6 @@ class Equalised_Histogram:
 		frames = Grayscale.apply()
 		output_frames = []
 		for frame in frames:
-			equ = cv2.equalizeHist(frame)
+			equ = cv2.equalizeHist(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
 			output_frames.append(equ)
 		return output_frames
