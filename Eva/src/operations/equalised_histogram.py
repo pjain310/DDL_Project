@@ -7,6 +7,6 @@ class Equalised_Histogram:
 
     def apply(self, frames):
         for frame in frames:
-            equ = cv2.equalizeHist(frame.image)
+            equ = cv2.equalizeHist(cv2.cvtColor(frame.image, cv2.COLOR_BGR2GRAY))
             frame.image = equ
         return frames
