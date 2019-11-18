@@ -11,7 +11,12 @@ import xml.etree.ElementTree as ET
 
 import cv2
 import numpy as np
+import sys
 
+import pandas as pd
+from PIL import Image
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath('../src'))))
 from src.loaders.TaskManager import TaskManager
 from src.loaders.abstract_loader import AbstractLoader
 
@@ -21,6 +26,7 @@ from src.loaders.abstract_loader import AbstractLoader
 class CloudImagesLoader(AbstractLoader):
 	def __init__(self, args, image_width=2100, image_height=1400):
 		self.args = args
+		self.args.data_type == 'i'
 		self.data_dict = {}
 		self.label_dict = {}
 		self.filters = ['Fish','Flower','Gravel','Sugar']
@@ -48,6 +54,20 @@ class CloudImagesLoader(AbstractLoader):
 		"""
 		return None
 
+	def load_boxes(self, dir: str = None):
+		if args.data_type=='i':
+			boxes = loader.load_boxes_for_images()
+
+		elif args.data_type=='v':
+			boxes = loader.load_boxes_for_images()
+
+	def load_labels(self, dir: str = None):
+		if args.data_type=='i':
+			labels = loader.load_labels_for_images()
+
+		elif args.data_type=='v':
+			labels = loader.load_labels_for_videos()
+
 	def load_boxes_for_images(self, dir: str = None):
 		"""
 		Loads boxes from annotation
@@ -55,10 +75,10 @@ class CloudImagesLoader(AbstractLoader):
 		:return: boxes
 		"""
 		if dir is None:
-			dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset',
+			dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset/train',
 							   self.args.anno_path)
 		self.boxes = np.array(self.get_boxes_for_images(dir)) # load box as [(xmin, ymin), (xmax, ymax)]
-	return self.boxes
+		return self.boxes
 
 	def load_boxes_for_videos(self, dir: str = None):
 		"""
@@ -67,10 +87,10 @@ class CloudImagesLoader(AbstractLoader):
 		:return: boxes
 		"""
 		if dir is None:
-			dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset',
+			dir = os.path.join(self.eva_dir, 'data', 'ua_detrac',
 							   self.args.anno_path)
 		self.boxes = np.array(self.get_boxes_for_videos(dir))
-	return self.boxes
+		return self.boxes
 
 	def load_images(self, image_dir: str = None, image_size=None):
 		"""
@@ -83,11 +103,12 @@ class CloudImagesLoader(AbstractLoader):
 
 		if image_dir is None:
 			if self.args.data_type == 'i':
-				image_dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset',
+				image_dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset/data',
 									 self.args.image_path)
 			elif self.args.data_type == 'v':
 				image_dir = os.path.join(self.eva_dir, 'data', 'ua_detrac',
-                                     self.args.image_path)
+									 self.args.image_path)
+		print(image_dir)
 		file_names = []
 		for root, subdirs, files in os.walk(image_dir):
 			
@@ -119,7 +140,7 @@ class CloudImagesLoader(AbstractLoader):
 		"""
 
 		if dir is None:
-			dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset',
+			dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset/train',
 							   self.args.anno_path)
 		category_list = self.filters
 
@@ -152,28 +173,28 @@ class CloudImagesLoader(AbstractLoader):
 			return None
 
 	def load_labels_for_videos(self, dir: str = None):
-        """
-        Loads vehicle type, speed, color, and intersection of ua-detrac
-        vehicle type, speed is given by the dataset
-        color, intersection is derived from functions built-in
-        :return: labels
-        """
+		"""
+		Loads vehicle type, speed, color, and intersection of ua-detrac
+		vehicle type, speed is given by the dataset
+		color, intersection is derived from functions built-in
+		:return: labels
+		"""
 
-        if dir is None:
-            dir = os.path.join(self.eva_dir, 'data', 'ua_detrac',
-                               self.args.anno_path)
-        results = self._load_XML(dir)
-        if results is not None:
-            vehicle_type_labels, speed_labels, color_labels, \
-                intersection_labels = results
-            self.labels = {'vehicle': vehicle_type_labels,
-                           'speed': speed_labels,
-                           'color': color_labels,
-                           'intersection': intersection_labels}
+		if dir is None:
+			dir = os.path.join(self.eva_dir, 'data', 'ua_detrac',
+							   self.args.anno_path)
+		results = self._load_XML(dir)
+		if results is not None:
+			vehicle_type_labels, speed_labels, color_labels, \
+				intersection_labels = results
+			self.labels = {'vehicle': vehicle_type_labels,
+						   'speed': speed_labels,
+						   'color': color_labels,
+						   'intersection': intersection_labels}
 
-            return self.labels
-        else:
-            return None
+			return self.labels
+		else:
+			return None
 
 	def get_video_start_indices(self):
 		"""
@@ -184,10 +205,10 @@ class CloudImagesLoader(AbstractLoader):
 	def save_images(self):
 		# we need to save the image / video start indexes
 		# convert list to np.array
-		save_dir = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
+		save_dir = os.path.join(self.eva_dir, 'data', 'cloud_output_data', self.args.cache_path,
 								self.args.cache_image_name)
 		if self.args.data_type == 'v':
-			save_dir_vi = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
+			save_dir_vi = os.path.join(self.eva_dir, 'data', 'cloud_output_data', self.args.cache_path,
 								   self.args.cache_vi_name)
 		if self.images is None:
 			warnings.warn("No image loaded, call load_images() first", Warning)
@@ -203,7 +224,7 @@ class CloudImagesLoader(AbstractLoader):
 						  Warning)
 
 	def save_labels(self):
-		save_dir = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
+		save_dir = os.path.join(self.eva_dir, 'data', 'cloud_output_data', self.args.cache_path,
 								self.args.cache_label_name)
 		if self.labels is None:
 			warnings.warn("No labels loaded, call load_labels() first",
@@ -216,7 +237,7 @@ class CloudImagesLoader(AbstractLoader):
 			print("labels type is ", type(self.labels))
 
 	def save_boxes(self):
-		save_dir = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
+		save_dir = os.path.join(self.eva_dir, 'data', 'cloud_output_data', self.args.cache_path,
 								self.args.cache_box_name)
 		if self.images is None:
 			warnings.warn("No labels loaded, call load_boxes() first", Warning)
@@ -227,22 +248,22 @@ class CloudImagesLoader(AbstractLoader):
 			warnings.warn("Labels type is not np....cannot save", Warning)
 
 	def load_cached_images(self):
-		save_dir = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
+		save_dir = os.path.join(self.eva_dir, 'data', 'cloud_output_data', self.args.cache_path,
 								self.args.cache_image_name)
 		# save_dir_vi = os.path.join(self.eva_dir, 'coud_output_data', self.args.cache_path,
-		# 						   self.args.cache_vi_name)
+		#                          self.args.cache_vi_name)
 		self.images = np.load(save_dir)
 		# self.video_start_indices = np.load(save_dir_vi)
 		return self.images
 
 	def load_cached_boxes(self):
-		save_dir = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
+		save_dir = os.path.join(self.eva_dir, 'data', 'cloud_output_data', self.args.cache_path,
 								self.args.cache_box_name)
 		self.boxes = np.load(save_dir, allow_pickle=True)
 		return self.boxes
 
 	def load_cached_labels(self):
-		save_dir = os.path.join(self.eva_dir, 'data', 'coud_output_data', self.args.cache_path,
+		save_dir = os.path.join(self.eva_dir, 'data', 'cloud_output_data', self.args.cache_path,
 								self.args.cache_label_name)
 		labels_pickeled = np.load(save_dir, allow_pickle=True)
 		self.labels = labels_pickeled.item()
@@ -250,85 +271,91 @@ class CloudImagesLoader(AbstractLoader):
 
 
 	def get_boxes_for_videos(self, anno_dir):
-        width = self.image_width
-        height = self.image_height
-        import xml.etree.ElementTree as ET
-        original_height = 540
-        original_width = 960
-        anno_files = os.listdir(anno_dir)
-        anno_files.sort()
-        boxes_dataset = []
-        cumu_count = 0
+		width = self.image_width
+		height = self.image_height
+		import xml.etree.ElementTree as ET
+		original_height = 540
+		original_width = 960
+		anno_files = os.listdir(anno_dir)
+		anno_files.sort()
+		boxes_dataset = []
+		cumu_count = 0
 
-        for anno_file in anno_files:
-            if ".xml" not in anno_file:
-                print("skipping", anno_file)
-                continue
-            file_path = os.path.join(anno_dir, anno_file)
+		for anno_file in anno_files:
+			if ".xml" not in anno_file:
+				print("skipping", anno_file)
+				continue
+			file_path = os.path.join(anno_dir, anno_file)
 
-            tree = ET.parse(file_path)
-            tree_root = tree.getroot()
+			tree = ET.parse(file_path)
+			tree_root = tree.getroot()
 
-            for frame in tree_root.iter('frame'):
-                boxes_frame = []
-                curr_frame_num = int(frame.attrib['num'])
-                if len(boxes_dataset) < cumu_count + curr_frame_num - 1:
-                    boxes_dataset.extend([None] * (
-                        cumu_count + curr_frame_num - len(boxes_dataset)))
-                for box in frame.iter('box'):
-                    top, left, bottom, right = self.get_corners(box,
-                                                                width /
-                                                                original_width,
-                                                                height /
-                                                                original_height
-                                                                )
-                    boxes_frame.append((top, left, bottom, right))
+			for frame in tree_root.iter('frame'):
+				boxes_frame = []
+				curr_frame_num = int(frame.attrib['num'])
+				if len(boxes_dataset) < cumu_count + curr_frame_num - 1:
+					boxes_dataset.extend([None] * (
+						cumu_count + curr_frame_num - len(boxes_dataset)))
+				for box in frame.iter('box'):
+					top, left, bottom, right = self.get_corners(box,
+																width /
+																original_width,
+																height /
+																original_height
+																)
+					boxes_frame.append((top, left, bottom, right))
 
-                boxes_dataset.append(boxes_frame)
+				boxes_dataset.append(boxes_frame)
 
-        return boxes_dataset
+		return boxes_dataset
 
-
+	
 	def get_boxes_for_images(self, anno_dir):
 		width = self.image_width
 		height = self.image_height
 		category_list = self.filters
-		for i, name in enumerate(category_list):
-			self.add_class("cloud", i+1, name)
+		boxes_dataset = []
+		# for i, name in enumerate(category_list):
+		# 	self.add_class("cloud", i+1, name)
 		df = pd.DataFrame(columns=["image_id","EncodedPixels","CategoryId","Width","Height"])
-		for i, row in df.iterrows():
-            self.add_image("cloud", 
-                           image_id=row.name, 
-                           path='../understanding_cloud_organization/train_images/'+str(row.image_id), 
-                           labels=row['CategoryId'],
-                           annotations=row['EncodedPixels'], 
-                           height=row['Height'], width=row['Width'])
-        for i in range(50):
-		    image_id = random.choice(train_dataset.image_ids)
-		    print(train_dataset.image_reference(image_id))
-		    
-		    image = train_dataset.load_image(image_id)
-		    info = self.image_info[image_id]
-                
-	        mask = np.zeros((IMAGE_SIZE, IMAGE_SIZE, len(info['annotations'])), dtype=np.uint8)
-	        labels = []
-	        
-	        for m, (annotation, label) in enumerate(zip(info['annotations'], info['labels'])):
-	            sub_mask = np.full(info['height']*info['width'], 0, dtype=np.uint8)
-	            annotation = [int(x) for x in annotation.split(' ')]
-	            
-	            for i, start_pixel in enumerate(annotation[::2]):
-	                sub_mask[start_pixel: start_pixel+annotation[2*i+1]] = 1
+		# train_dataset = CloudDataset(df[:training_set_size])
+		# for i, row in df.iterrows():
+		# 	self.add_image("cloud", 
+		# 				   image_id=row.name, 
+		# 				   path='../understanding_cloud_organization/train_images/'+str(row.image_id), 
+		# 				   labels=row['CategoryId'],
+		# 				   annotations=row['EncodedPixels'], 
+		# 				   height=row['Height'], width=row['Width'])
+		for i in range(50):
+			image_id = random.choice(train_dataset.image_ids)
+			# print(train_dataset.image_reference(image_id))
+			
+			# image = resize_image(self.image_info[image_id]['path'])
+			info = self.image_info[image_id]
+				
+			mask = np.zeros((IMAGE_SIZE, IMAGE_SIZE, len(info['annotations'])), dtype=np.uint8)
+			# labels = []
+			
+			for m, (annotation, label) in enumerate(zip(info['annotations'], info['labels'])):
+				sub_mask = np.full(info['height']*info['width'], 0, dtype=np.uint8)
+				annotation = [int(x) for x in annotation.split(' ')]
+				
+				for i, start_pixel in enumerate(annotation[::2]):
+					sub_mask[start_pixel: start_pixel+annotation[2*i+1]] = 1
 
-	            sub_mask = sub_mask.reshape((info['height'], info['width']), order='F')
-	            sub_mask = cv2.resize(sub_mask, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_NEAREST)
-	            
-	            mask[:, :, m] = sub_mask
-	            labels.append(int(label)+1)
-	            
-	        # return mask, np.array(labels)
+				sub_mask = sub_mask.reshape((info['height'], info['width']), order='F')
+				sub_mask = cv2.resize(sub_mask, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_NEAREST)
+				
+				mask[:, :, m] = sub_mask
+				# labels.append(int(label)+1)
+				print(mask)
+				boxes_frame.append(mask)
 
-		    # convert mask to bounding box
+			boxes_dataset.append(boxes_frame)
+				
+			# return mask, np.array(labels)
+
+			# convert mask to bounding box
 
 		# return mask, np.array(labels)
 		return boxes_dataset
@@ -450,9 +477,19 @@ def get_parser():
 						help='Define filename for saving and loading cached '
 							 'boxes')
 	# parser.add_argument('--cache_vi_name', default='ua_detrac_vi.npy',
-	# 					help='Define filename for saving and loading cached '
-	# 						 'video indices')
+	#                   help='Define filename for saving and loading cached '
+	#                        'video indices')
 	return parser
+
+
+
+
+# def load_images():
+# 	if args.data_type=='i':
+# 		images = loader.load_images()
+
+# 	elif args.data_type=='v':
+# 		images = loader.load_video()
 
 
 if __name__ == "__main__":
@@ -464,29 +501,24 @@ if __name__ == "__main__":
 
 	st = time.time()
 	loader = CloudImagesLoader(args)
-	if args.data_type=='i':
-		images = loader.load_images()
-		labels = loader.load_labels_for_images()
-		boxes = loader.load_boxes_for_images()
-
-	elif args.data_type=='v':
-		images = loader.load_video()
-		labels = loader.load_labels_for_videos()
-		boxes = loader.load_boxes_for_images()
+	images = loader.load_images()
+	labels = loader.load_labels()
+	# boxes = loader.load_boxes()
+	
 
 	
 	
 
 	print("Time taken to load everything from disk", time.time() - st,
 		  "seconds")
-	loader.save_boxes()
+	# loader.save_boxes()
 	loader.save_labels()
 	loader.save_images()
 
 	st = time.time()
 	images_cached = loader.load_cached_images()
 	labels_cached = loader.load_cached_labels()
-	boxes_cached = loader.load_cached_boxes()
+	# boxes_cached = loader.load_cached_boxes()
 	print("Time taken to load everything from npy", time.time() - st,
 		  "seconds")
 
