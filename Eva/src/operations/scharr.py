@@ -7,10 +7,11 @@ class ScharrX:
         pass
 
     def apply(self, frames):
+        output_frames = []
         for frame in frames:
-            scharrx = cv2.Scharr(frame.image,cv2.CV_64F, 1, 0)
-            frame.image = scharrx
-        return frames
+            scharrx = cv2.Scharr(frame,cv2.CV_64F, 1, 0)
+            output_frames.append(scharrx)
+        return output_frames
 
 class ScharrY:
     def __init__(self):

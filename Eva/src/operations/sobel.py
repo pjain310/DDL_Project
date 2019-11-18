@@ -8,10 +8,11 @@ class SobelX:
         pass
 
     def apply(self, frames):
+        output_frames = []
         for frame in frames:
-            sobelx = cv2.Sobel(frame.image,cv2.CV_64F, 1, 0, self.kernel_size)
-            frame.image = sobelx
-        return frames
+            sobelx = cv2.Sobel(frame,cv2.CV_64F, 1, 0, self.kernel_size)
+            output_frames.append(sobelx)
+        return output_frames
 
 class SobelY:
     def __init__(self, kernel_size=5):
