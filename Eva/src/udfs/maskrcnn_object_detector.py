@@ -65,9 +65,9 @@ class MaskRCNNObjectDetector(AbstractClassifierUDF):
 		# ]
 
 	def _get_predictions(self, frames: np.ndarray) -> Tuple[List[List[str]],
-															List[List[float]],
-															List[List[
-																BoundingBox]]]:
+		List[List[float]],
+		List[List[
+		BoundingBox]]]:
 		"""
 		Performs predictions on input frames
 		Arguments:
@@ -107,6 +107,6 @@ class MaskRCNNObjectDetector(AbstractClassifierUDF):
 		frames = batch.frames_as_numpy_array()
 		(pred_classes, pred_scores, pred_boxes) = self._get_predictions(frames)
 		return Prediction.predictions_from_batch_and_lists(batch,
-														   pred_classes,
-														   pred_scores, 
-														   boxes=pred_boxes)
+				pred_classes,
+				pred_scores, 
+				boxes=pred_boxes)
