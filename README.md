@@ -39,8 +39,13 @@ Currently, the following preprocessing operations are supported:
   * Scharr
   * Sobel
 
+## Team
 
-
+Questions? Please feel free to reach out to us at:
+- Arnav Jeurkar: ajeurkar3@gatech.edu
+- Prerna Jain: prernaj@gatech.edu
+- Priyank Madria: priyankmadria@gatech.edu
+- Shubham Singhal: ssinghal37@gatech.edu
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
