@@ -41,3 +41,21 @@ class SelectStatement(EvaStatement):
     @property
     def target_list(self):
         return self._target_list
+    
+    @target_list.setter
+    def target_list(self, target_expr_list: List[AbstractExpression]):
+        self._target_list = target_expr_list
+
+    @property
+    def from_table(self):
+        return self._from_table
+
+    @from_table.setter
+    def from_table(self, table: TableRef):
+        self._from_table = table
+
+    def __str__(self) -> str:
+        print_str = "SELECT {} FROM {} WHERE {}".format(self._target_list,
+                                                        self._from_table,
+                                                        self._where_clause)
+        return print_str
