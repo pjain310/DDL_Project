@@ -36,15 +36,14 @@ class InsertStatement(EvaStatement):
         self._target_list = target_expr_list
 
     @property
-    def from_table(self):
-        return self._from_table
+    def to_table(self):
+        return self._to_table
 
-    @from_table.setter
-    def from_table(self, table: TableRef):
-        self._from_table = table
+    @to_table.setter
+    def to_table(self, table: TableRef):
+        self._to_table = table
 
     def __str__(self) -> str:
-        print_str = "INSERT INTO {} VALUES {}".format(self._target_list,
-                                                        self._to_table,
-                                                        self._where_clause)
+        print_str = "INSERT INTO {} VALUES {}".format(self._to_table,
+                                                        self._target_list)
         return print_str
