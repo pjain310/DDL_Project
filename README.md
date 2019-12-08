@@ -25,8 +25,7 @@ This file also contains code to train the model and make predictions for the tes
 
 ### 2. Modifications to EVA
 
-1. /Eva/src/loaders/loader_uadtra_cloud.py: contains our modified code to add our cloud dataset into EVA.
-We will be modifying this and adding a generalised loader which can be used for images soon!
+1. /Eva/src/loaders/loader_uadtra_cloud.py: contains our modified code to add our cloud dataset into EVA. 
 
 2. /Eva/src/loaders/loader_uadtra_cloud.py: also contains generalised loader to add image files to EVA
 
@@ -34,7 +33,7 @@ We will be modifying this and adding a generalised loader which can be used for 
 
 4. Eva/src/query_parser/insert_statement.py: this has the ability to insert queries. This was created using the select_statement.py file.
 
-5. Eva/src/udfs/maskrcnn_object_detector.py: This has the ability to detect objects based on the model which we trained using a pre-trained maskRCNN model. 
+5. Eva/src/udfs/maskrcnn_object_detector.py: This has the ability to detect objects based on the model which we trained using a pre-trained maskRCNN model.  It detects clouds and their types from images and classifies them into the following categories viz. 'sugar', 'gravel', 'fish' and 'flower'
 
 Currently, the following preprocessing operations are supported:
   * Blur
