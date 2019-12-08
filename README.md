@@ -34,7 +34,7 @@ We will be modifying this and adding a generalised loader which can be used for 
 
 4. Eva/src/query_parser/insert_statement.py: this has the ability to insert queries. This was created using the select_statement.py file.
 
-5. Eva/src/udfs/maskrcnn_object_detector.py: this has the ability to detect objects based on our model.
+5. Eva/src/udfs/maskrcnn_object_detector.py: This has the ability to detect objects based on the model which we trained using a pre-trained maskRCNN model. 
 
 Currently, the following preprocessing operations are supported:
   * Blur
