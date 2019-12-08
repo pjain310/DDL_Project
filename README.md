@@ -32,12 +32,12 @@ We will be modifying this and adding a generalised loader which can be used for 
 
 3. Eva/src/operations/: contains preprocessing filters which can be applied to databse entries in EVA (both videos and image frames). We also have an api which can be modified to use these objects outside of Eva as well.
 Currently, the following preprocessing operations are supported:
-  ..* Blur
-  ..* Equalised Histogram
-  ..* Grayscale
-  ..* Laplacian
-  ..* Scharr
-  ..* Sobel
+..* Blur
+..* Equalised Histogram
+..* Grayscale
+..* Laplacian
+..* Scharr
+..* Sobel
 
 
 
