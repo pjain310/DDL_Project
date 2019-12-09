@@ -27,7 +27,7 @@ This file also contains code to train the model and make predictions for the tes
 
 1. /Eva/src/loaders/loader_uadtra_cloud.py: contains our modified code to add our cloud dataset into EVA. Detection of images from given location. Modify. Use: python loader_uadetra_cloud.py --data_type='<i if image and v if video>' --path='<path to folder containing train images>'  
 
-2. /Eva/src/loaders/loader_uadtra_cloud.py: also contains generalised loader to add image files to EVA
+2. /Eva/src/loaders/loader_uadtra_cloud.py: also contains generalised loader to add image files to EVA. Modification is required.
 
 3. Eva/src/operations/: contains preprocessing filters which can be applied to databse entries in EVA (both videos and image frames). We also have an api which can be modified to use these objects outside of Eva as well.
 
