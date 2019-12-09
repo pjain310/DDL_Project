@@ -72,7 +72,24 @@ class CloudImagesLoader(AbstractLoader):
 		"""
 		if dir is None:
 			dir = os.path.join(self.eva_dir, 'data', 'cloud_dataset/train', self.args.anno_path)
-		self.boxes = np.array(self.get_boxes_for_images(dir)) # load box as [(xmin, ymin), (xmax, ymax)]
+		info = self.image_info[image_id]
+                
+        mask = np.zeros((IMAGE_SIZE, IMAGE_SIZE, len(info['annotations'])), dtype=np.uint8)
+        labels = []
+        
+        for m, (annotation, label) in enumerate(zip(info['annotations'], info['labels'])):
+            sub_mask = np.full(info['height']*info['width'], 0, dtype=np.uint8)
+            annotation = [int(x) for x in annotation.split(' ')]
+            
+            for i, start_pixel in enumerate(annotation[::2]):
+                sub_mask[start_pixel: start_pixel+annotation[2*i+1]] = 1
+
+            sub_mask = sub_mask.reshape((info['height'], info['width']), order='F')
+            sub_mask = cv2.resize(sub_mask, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_NEAREST)
+            
+            mask[:, :, m] = sub_mask
+            labels.append(int(label)+1)
+		self.boxes = mask
 		return self.boxes
 
 	def load_boxes_for_videos(self, dir: str = None):
