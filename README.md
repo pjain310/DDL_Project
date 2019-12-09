@@ -43,6 +43,10 @@ Currently, the following preprocessing operations are supported:
   * Scharr
   * Sobel
 
+We have created a pull request for preprocessing filters.
+https://github.com/georgia-tech-db/Eva/pull/43
+
+
 ## Team
 
 Questions? Please feel free to reach out to us at:
